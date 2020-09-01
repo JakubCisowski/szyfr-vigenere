@@ -5,18 +5,6 @@ bool wczytajPrzelaczniki(int ileArgumentow, char* argumenty[], char** kluczSzyfr
 	// INFO
 	// Jesli ktos wczytuje kilka razy ten sam przelacznik, program bierze pod uwage ostatni wczytany
 	// Jesli ktos wczytuje przelacznik ktory nie istnieje, program go ignoruje
-	
-
-
-	/*printf("ilosc argumentow - %d\n", ileArgumentow);
-	for (int i = 0; i < ileArgumentow; i++)
-	{
-		printf("%d argument - %s\n", i,argumenty[i]);
-	}*/
-	
-	//*kluczSzyfrujacy = argumenty[1];
-
-
 
 	// Zmienne pomocnicze do sprawdzenia czy podano wszystkie wymagane przelaczniki przy wlaczeniu programu
 	bool jestKlucz = false, jestWej = false, jestWyj = false, jestSzyfr = false, jestDeszyfr = false;
@@ -86,7 +74,7 @@ bool wczytajPrzelaczniki(int ileArgumentow, char* argumenty[], char** kluczSzyfr
 			}
 
 			//Sprawdzenie poprawnosci klucza szyfrujacego
-			if (checkKey(argumenty[i + 1]))
+			if (sprawdzKlucz(argumenty[i + 1]))
 			{
 				jestKlucz = true;
 				*kluczSzyfrujacy = argumenty[++i];
@@ -137,17 +125,81 @@ bool wczytajPrzelaczniki(int ileArgumentow, char* argumenty[], char** kluczSzyfr
 	return true;
 }
 
-int checkKey(char key[])
+int sprawdzKlucz(char klucz[])
 {
 	int i, x = 0, p;
-	p = strlen(key);
+	p = strlen(klucz);
 
 	for (i = 0; i < p; i++)
-		if ((key[i] >= 'a' && key[i] <= 'z') || (key[i] >= 'A' && key[i] <= 'Z'))
+		if ((klucz[i] >= 'a' && klucz[i] <= 'z') || (klucz[i] >= 'A' && klucz[i] <= 'Z'))
 		{
 			continue;
 		}
 		else return 0;
 
 	return 1;
+}
+
+Bufor* wczytajDane(char* plikWejsciowy)
+{
+	Bufor* glowa = NULL;
+
+	FILE* plik = fopen(plikWejsciowy, "r");
+	char czescTekstu[10];
+
+	while (fgets(czescTekstu, sizeof(czescTekstu), plik))
+	{
+		printf("\n%s",czescTekstu);
+		glowa = wstawNaKoniec(glowa, czescTekstu);
+	}
+
+	fclose(plik);
+
+	return glowa;
+}
+
+void zapiszDane(Bufor* glowa, char* plikWyjsciowy)
+{
+	FILE* plik = fopen(plikWyjsciowy, "w");
+
+	// Iterujemy po czesciach tekstu w buforze
+	while(glowa != NULL)
+	{
+		fprintf(plik, glowa->wartosc);
+		glowa = glowa->next;
+	}
+
+	fclose(plik);
+}
+
+Bufor* nowyElement(char* wartosc)
+{
+	Bufor* nowyElement = (Bufor*)malloc(sizeof(Bufor));
+	nowyElement->wartosc = _strdup(wartosc);
+	nowyElement->next = NULL;
+	return nowyElement;
+}
+
+Bufor* wstawNaKoniec(Bufor* glowa, char* wartosc)
+{
+	if (glowa == NULL)
+		return nowyElement(wartosc);
+
+	else
+		glowa->next = wstawNaKoniec(glowa->next, wartosc);
+	return glowa;
+}
+
+
+
+
+// DO USUNIECIA
+void print(Bufor* head)
+{
+	Bufor* current_node = head;
+	while (current_node != NULL)
+	{
+		printf("%s\n", current_node->wartosc);
+		current_node = current_node->next;
+	}
 }
