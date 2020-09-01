@@ -2,10 +2,6 @@
 
 bool wczytajPrzelaczniki(int ileArgumentow, char* argumenty[], char** kluczSzyfrujacy, char** plikWejsciowy, char** plikWyjsciowy, bool* szyfrowanie, bool* deszyfrowanie)
 {
-	// INFO
-	// Jesli ktos wczytuje kilka razy ten sam przelacznik, program bierze pod uwage ostatni wczytany
-	// Jesli ktos wczytuje przelacznik ktory nie istnieje, program go ignoruje
-
 	// Zmienne pomocnicze do sprawdzenia czy podano wszystkie wymagane przelaczniki przy wlaczeniu programu
 	bool jestKlucz = false, jestWej = false, jestWyj = false, jestSzyfr = false, jestDeszyfr = false;
 
@@ -38,7 +34,7 @@ bool wczytajPrzelaczniki(int ileArgumentow, char* argumenty[], char** kluczSzyfr
 		}
 
 		// Przelacznik pliku wyjsciowego
-		if (strcmp(argumenty[i], "-o") == 0)
+		if(strcmp(argumenty[i], "-o") == 0)
 		{
 			// Sprawdzenie czy istnieje nastepny argument
 			if (i + 1 == ileArgumentow)
@@ -125,7 +121,7 @@ bool wczytajPrzelaczniki(int ileArgumentow, char* argumenty[], char** kluczSzyfr
 	return true;
 }
 
-int sprawdzKlucz(char klucz[])
+int sprawdzKlucz(char* klucz)
 {
 	int i, x = 0, p;
 	p = strlen(klucz);
@@ -149,7 +145,7 @@ Bufor* wczytajDane(char* plikWejsciowy)
 
 	while (fgets(czescTekstu, sizeof(czescTekstu), plik))
 	{
-		printf("\n%s",czescTekstu);
+		//printf("\n%s",czescTekstu);
 		glowa = wstawNaKoniec(glowa, czescTekstu);
 	}
 
@@ -190,16 +186,140 @@ Bufor* wstawNaKoniec(Bufor* glowa, char* wartosc)
 	return glowa;
 }
 
-
-
-
-// DO USUNIECIA
-void print(Bufor* head)
+void Viegenere(Bufor* glowa, char* klucz, bool szyfrowanie, bool deszyfrowanie)
 {
-	Bufor* current_node = head;
-	while (current_node != NULL)
+	// Konwerujemy klucz w postaci liter na klucz z liczbami w celu ulatwienia szyfrowania
+	int* kluczLiczbowy = (int*)malloc(strlen(klucz) * sizeof(int));
+	konwertujKlucz(kluczLiczbowy, klucz);
+
+	// Bedziemy przesuwac sie po kluczu, wiec potrzebny indeks, na starcie pierwszy element
+	int indeksWKluczu = 0;
+
+	Bufor* temp = glowa;
+
+	while (temp->next != NULL)
 	{
-		printf("%s\n", current_node->wartosc);
-		current_node = current_node->next;
+		temp->wartosc = szyfruj(temp->wartosc, &indeksWKluczu, kluczLiczbowy, szyfrowanie, deszyfrowanie);
+		temp = temp->next;
 	}
+
+	// Ostani element
+	temp->wartosc = szyfruj(temp->wartosc, &indeksWKluczu, kluczLiczbowy, szyfrowanie, deszyfrowanie);
+}
+
+char* szyfruj(char* napis, int* indeks, int* klucz, bool szyfrowanie, bool deszyfrowanie)
+{
+
+
+	char* nowy = (char*)malloc((strlen(napis)+1) * sizeof(char));
+
+	for (int i = 0; i < strlen(napis); i++)
+	{
+
+		// Kod ascii obecnego znaku
+		int ascii = napis[i];
+
+		if (szyfrowanie == true)
+		{
+			if (ascii >= 65 && ascii <= 90)
+			{
+				if (ascii + klucz[*indeks] <= 90)
+				{
+					nowy[i] = ascii + klucz[*indeks];
+				}
+				else if(ascii + klucz[*indeks] > 90)
+				{
+					nowy[i] = ascii + klucz[*indeks] - 26;
+				}
+			}
+			else if (ascii >= 97 && ascii <= 122)
+			{
+				if (ascii + klucz[*indeks] <= 122)
+				{
+					nowy[i] = ascii + klucz[*indeks];
+				}
+				else if (ascii + klucz[*indeks] > 122)
+				{
+					nowy[i] = ascii + klucz[*indeks] - 26;
+				}
+			}
+			else
+			{
+				nowy[i] = napis[i];
+			}
+		}
+		else if (deszyfrowanie == true)
+		{
+			if (ascii >= 65 && ascii <= 90)
+			{
+				if (ascii - klucz[*indeks] >= 65)
+				{
+					nowy[i] = ascii - klucz[*indeks];
+				}
+				else if (ascii - klucz[*indeks] < 65)
+				{
+					nowy[i] = ascii - klucz[*indeks] + 26;
+				}
+			}
+			else if (ascii >= 97 && ascii <= 122)
+			{
+				if (ascii - klucz[*indeks] >= 97)
+				{
+					nowy[i] = ascii - klucz[*indeks];
+				}
+				else if (ascii - klucz[*indeks] < 97)
+				{
+					nowy[i] = ascii - klucz[*indeks] + 26;
+				}
+			}
+			else
+			{
+				nowy[i] = napis[i];
+			}
+		}
+
+		// Przesuniecie indeksu
+		if (*indeks == sizeof(klucz))
+			*indeks = 0;
+		else
+			*indeks += 1;
+
+	}
+	// Dodanie null na koniec napisu
+	nowy[strlen(napis)] = '\0';
+
+	return nowy;
+}
+
+void konwertujKlucz(int* kluczLiczbowy, char* klucz)
+{
+	for (int i = 0; i < strlen(klucz); i++)
+	{
+		// Kod ascii obecnego znaku
+		int ascii = klucz[i];
+
+		// Zamieniamy na liczby, A to przesuniecie o 0 wiec:
+		if (ascii >= 65 && ascii <= 90)
+		{
+			kluczLiczbowy[i] = ascii - 65;
+		}
+		else
+		{
+			kluczLiczbowy[i] = ascii - 97;
+		}
+	}
+}
+
+void usunListe(Bufor** glowa)
+{
+	Bufor* obecny = *glowa;
+	Bufor* nastepny;
+
+	while (obecny != NULL)
+	{
+		nastepny = obecny->next;
+		free(obecny);
+		obecny = nastepny;
+	}
+	*glowa = NULL;
 }
